@@ -1,0 +1,71 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+g = 9.81  # gravity
+
+
+class WaveAgent:
+    def __init__(self):
+        pass
+    
+    def perceive(self):
+        print("\n--- Enter Environmental Parameters ---")
+        self.wind_speed = float(input("Wind speed (m/s): "))
+        self.wind_duration = float(input("Wind duration (hours): "))
+        self.fetch = float(input("Fetch (km): "))
+        self.depth = float(input("Sea depth (m): "))
+        self.tide = float(input("Tide level (m): "))
+        self.current = float(input("Current speed (m/s): "))
+    
+
+    def compute_wave_height(self):
+        base_height = (self.wind_speed ** 2) / g
+        
+        duration_factor = 1 + (self.wind_duration / 24)
+        fetch_factor = 1 + (self.fetch / 500)
+        depth_factor = 1 + (5 / (self.depth + 1))
+        tide_factor = 1 + (self.tide / 10)
+        current_factor = 1 + (self.current / 5)
+        
+        Hs = base_height * duration_factor * fetch_factor * depth_factor * tide_factor * current_factor
+        
+        return Hs
+    
+   
+    def apply_ml_correction(self, Hs):
+        correction_factor = 0.85
+        return Hs * correction_factor
+    
+    
+    def probability_distribution(self, Hs):
+        H = np.linspace(0, 2*Hs, 100)
+        P = 1 - np.exp(-(H/Hs)**2)
+        return H, P
+    
+    
+    def act(self):
+        Hs = self.compute_wave_height()
+        Hs_corrected = self.apply_ml_correction(Hs)
+        
+        max_wave = 1.86 * Hs_corrected
+        min_wave = 0.3 * Hs_corrected
+        
+        print("\n--- RESULTS ---")
+        print(f"Significant Wave Height (Hs): {Hs_corrected:.2f} m")
+        print(f"Estimated Maximum Wave Height: {max_wave:.2f} m")
+        print(f"Estimated Minimum Wave Height: {min_wave:.2f} m")
+        
+        H, P = self.probability_distribution(Hs_corrected)
+        
+        plt.plot(H, P)
+        plt.xlabel("Wave Height (m)")
+        plt.ylabel("Probability")
+        plt.title("Wave Height Probability Distribution")
+        plt.grid()
+        plt.show()
+
+
+agent = WaveAgent()
+agent.perceive()
+agent.act()
